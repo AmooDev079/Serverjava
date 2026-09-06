@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>SERVER // CONTROL TERMINAL</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #050805;
+      color: #39ff88;
+      font-family: "Courier New", monospace;
+      overflow: hidden;
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: 58px 1fr 52px;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      border-bottom: 1px solid #164d2b;
+      background: #071008;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      box-shadow: 0 0 18px #0b5428;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px #39ff88;
+    }
+
+    .status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #ff3333;
+      box-shadow: 0 0 8px #ff3333;
+    }
+
+    .dot.online {
+      background: #39ff88;
+      box-shadow: 0 0 10px #39ff88;
+    }
+
+    aside {
+      grid-row: 2;
+      border-right: 1px solid #164d2b;
+      background: #060b07;
+      padding: 15px 12px;
+      overflow-y: auto;
+    }
+
+    .side-title {
+      color: #8affb5;
+      font-size: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px dashed #164d2b;
+      padding-bottom: 8px;
+    }
+
+    .command {
+      width: 100%;
+      display: block;
+      text-align: left;
+      margin: 6px 0;
+      padding: 9px 10px;
+      border: 1px solid #164d2b;
+      background: #081209;
+      color: #39ff88;
+      font: inherit;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+
+    .command:hover {
+      background: #0c1d10;
+      border-color: #39ff88;
+      box-shadow: 0 0 8px #164d2b;
+    }
+
+    main {
+      grid-row: 2;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      gap: 10px;
+    }
+
+    .terminal {
+      flex: 1;
+      min-height: 0;
+      border: 1px solid #164d2b;
+      background: #020402;
+      padding: 14px;
+      overflow-y: auto;
+      box-shadow: inset 0 0 25px #061408;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .line {
+      margin: 0 0 8px;
+      line-height: 1.35;
+    }
+
+    .server {
+      color: #39ff88;
+    }
+
+    .client {
+      color: #66aaff;
+    }
+
+    .system {
+      color: #888;
+    }
+
+    .error {
+      color: #ff5555;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .prompt {
+      padding: 12px 0;
+      color: #39ff88;
+    }
+
+    #message {
+      flex: 1;
+      min-width: 0;
+      background: #020402;
+      color: #39ff88;
+      border: 1px solid #164d2b;
+      padding: 12px;
+      outline: none;
+      font: inherit;
+    }
+
+    #message:focus {
+      border-color: #39ff88;
+      box-shadow: 0 0 8px #164d2b;
+    }
+
+    button.send {
+      padding: 0 18px;
+      background: #0a1a0d;
+      color: #39ff88;
+      border: 1px solid #39ff88;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button.send:hover {
+      background: #123519;
+    }
+
+    footer {
+      grid-column: 1 / -1;
+      border-top: 1px solid #164d2b;
+      background: #071008;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      color: #6e9f7d;
+      font-size: 11px;
+    }
+
+    @media (max-width: 700px) {
+      .app {
+        grid-template-columns: 150px 1fr;
+      }
+
+      .logo {
+        font-size: 13px;
+      }
+
+      .command {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">[ SERVER // CONTROL TERMINAL ]</div>
+      <div class="status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">OFFLINE</span>
+      </div>
+    </header>
+
+    <aside>
+      <div class="side-title">AVAILABLE COMMANDS</div>
+      <button class="command" onclick="sendCommand('/clients')">/clients</button>
+      <button class="command" onclick="sendCommand('/ping')">/ping</button>
+      <button class="command" onclick="sendCommand('/status')">/status</button>
+      <button class="command" onclick="sendCommand('/time')">/time</button>
+      <button class="command" onclick="sendCommand('/clear')">/clear</button>
+      <button class="command" onclick="sendCommand('/help')">/help</button>
+      <button class="command" onclick="sendCommand('/disconnect')">/disconnect</button>
+    </aside>
+
+    <main>
+      <div class="terminal" id="terminal">
+        <div class="line system">[SYSTEM] Terminal initialized.</div>
+        <div class="line system">[SYSTEM] Waiting for WebSocket connection...</div>
+      </div>
+      <div class="input-row">
+        <span class="prompt">&gt;</span>
+        <input id="message" type="text" autocomplete="off" placeholder="Enter message or command...">
+        <button class="send" onclick="sendMessage()">SEND</button>
+      </div>
+    </main>
+
+    <footer>WEBSOCKET CONTROL PANEL | Press ENTER to send | Node.js server ↔ Android client</footer>
+  </div>
+
+  <script>
+    const WS_URL = "ws://localhost:3000";
+    let socket = null;
+
+    const terminal = document.getElementById("terminal"),
+          input = document.getElementById("message"),
+          statusText = document.getElementById("statusText"),
+          statusDot = document.getElementById("statusDot");
+
+    function addLine(text, type = "system") {
+      const line = document.createElement("div");
+      line.className = "line " + type;
+      line.textContent = text;
+      terminal.appendChild(line);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function setStatus(online) {
+      statusText.textContent = online ? "ONLINE" : "OFFLINE";
+      statusDot.classList.toggle("online", online);
+    }
+
+    function connect() {
+      addLine("[SYSTEM] Connecting to " + WS_URL + "...");
+      socket = new WebSocket(WS_URL);
+
+      socket.onopen = () => {
+        setStatus(true);
+        addLine("[SYSTEM] WebSocket connection established.");
+      };
+
+      socket.onmessage = e => addLine("[SERVER] " + e.data, "server");
+
+      socket.onclose = () => {
+        setStatus(false);
+        addLine("[SYSTEM] Connection closed.");
+        socket = null;
+      };
+
+      socket.onerror = () => {
+        setStatus(false);
+        addLine("[ERROR] WebSocket connection failed.", "error");
+      };
+    }
+
+    function sendMessage() {
+      const message = input.value.trim();
+      if (!message) return;
+      if (!socket || socket.readyState !== WebSocket.OPEN) {
+        addLine("[ERROR] Server is not connected.", "error");
+        return;
+      }
+      socket.send(message);
+      addLine("[YOU] " + message, "client");
+      input.value = "";
+      input.focus();
+    }
+
+    function sendCommand(command) {
+      input.value = command;
+      sendMessage();
+    }
+
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    connect();
+  </script>
+</body>
+</html>
